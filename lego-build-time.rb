@@ -27,8 +27,10 @@ class Build
       :slowest_time   => duration(@times.max),
     }
 
-    r[:title] = @meta[:title] unless @meta[:title].nil?
-    r[:url]   = @meta[:url] unless @meta[:url].nil?
+    # TODO we actually want these first in the output
+    [ :title, :url, :date].each do |k|
+      r[k] = @meta[k] unless @meta[k].nil?
+    end
 
     r.each do |k,v|
       puts sprintf('%s%s=>%15s', k, ' ' * (15 - k.size), v)
@@ -78,7 +80,7 @@ if File.file?(input)
   b = Build.new(input)
   b.summarize
 elsif File.directory?(input)
-  Dir.glob(sprintf('%s/*.yaml', input)).each do |f|
+  Dir.glob(sprintf('%s/*.yaml', input)).sort.each do |f|
     b = Build.new(f)
     b.summarize
   end
