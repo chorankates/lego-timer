@@ -8,13 +8,14 @@ require 'yaml'
 
 class Build
 
-  attr_reader :filename, :times
+  attr_reader :filename, :meta, :times
   def initialize(filename)
     log(sprintf('inspecting[%s]', filename))
     # TODO some error checking here
     @filename = filename
     yaml      = YAML.load_file(@filename)
-    @times    = yaml.collect { |c| self.float2time(c) }
+    @meta     = yaml[:meta]
+    @times    = yaml[:times].collect { |c| self.float2time(c) }
   end
 
   def summarize
@@ -25,6 +26,9 @@ class Build
       :fastest_time   => duration(@times.min),
       :slowest_time   => duration(@times.max),
     }
+
+    r[:title] = @meta[:title] unless @meta[:title].nil?
+    r[:url]   = @meta[:url] unless @meta[:url].nil?
 
     r.each do |k,v|
       puts sprintf('%s%s=>%15s', k, ' ' * (15 - k.size), v)
