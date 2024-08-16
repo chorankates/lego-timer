@@ -19,21 +19,36 @@ class Build
   end
 
   def summarize
-    r = {
-      :total_time     => duration(get_total()),
-      :total_segments => @times.size + 1, # 0 based size
-      :average_time   => duration(get_average()),
-      :fastest_time   => duration(@times.min),
-      :slowest_time   => duration(@times.max),
+
+    c = get_total()
+
+    average = {
+      :mean   => duration(get_mean(c)),
+      :median => duration(get_median(c)),
+      :mode   => duration(get_mode(c)),
     }
 
-    # TODO we actually want these first in the output
+    # this is fragile and silly
+    if get_mode(c).eql?(0.0)
+      average.delete(:mode)
+    end
+
+    r = Hash.new
+
     [ :title, :url, :date].each do |k|
       r[k] = @meta[k] unless @meta[k].nil?
     end
 
+    r.merge!({
+      :total_time      => duration(c),
+      :total_segments  => @times.size + 1, # 0 based size
+      :fastest_segment => duration(@times.min),
+      :slowest_segment => duration(@times.max),
+      :average         => average,
+    })
+
     r.each do |k,v|
-      puts sprintf('%s%s=>%15s', k, ' ' * (15 - k.size), v)
+      puts sprintf('%s%s=>%20s', k, ' ' * (20 - k.size), v)
     end
   end
 
@@ -44,12 +59,42 @@ class Build
     t.first.to_i * 60 + t.last.to_i
   end
 
-  def get_average()
-    c = get_total()
-
-    # TODO mean/median/mode ?
+  def get_mean(c)
+    # The mean (average) of a data set is found by adding all numbers in the data set and then dividing by the number of values in the set.
     sprintf('%.2f', (c / @times.size.to_f)).to_f
   end
+
+  def get_median(c)
+    # The median is the middle value when a data set is ordered from least to greatest
+    sorted = @times.sort
+    middle_index = sorted.size / 2
+    sprintf('%.2f', sorted[middle_index]).to_f
+  end
+
+  def get_mode(c)
+    # The mode is the number that occurs most often in a data set.
+    counts = Hash.new(0)
+    @times.each do |t|
+      counts[t] += 1
+    end
+
+    if counts.values.uniq.eql?(1)
+      # this is almost always going to be the case
+      return 0.0
+    end
+
+    highest_count = counts.values.sort.first
+
+    @times.each do |time|
+      if counts[highest_count].eql?(time)
+        return time.to_f
+      end
+    end
+
+    # this should never happen
+    0.0
+  end
+
 
   def get_total()
     r = 0
