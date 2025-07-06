@@ -1,5 +1,5 @@
 #!/bin/env ruby
-## lego-build-time.rb -
+## lego-build-time.rb - you're a nerd, but are you a "record your sort and build times while building lego sets and then write code to interpret them" nerd?
 
 require 'json'
 require 'pry'
@@ -48,11 +48,20 @@ class Build
     })
 
     r.each do |k,v|
-      puts sprintf('%s%s=>%20s', k, ' ' * (20 - k.size), v)
+      if v.is_a?(String) or v.is_a?(Integer)
+        puts sprintf('%s%s=>%20s', k, ' ' * (20 - k.size), v)
+      elsif v.is_a?(Hash)
+        puts sprintf('%s%s%s=>', '',' ' * (20 - k.length), k)
+        v.each_pair do |k,vv|
+          puts sprintf('%s%s=>%s', ' ' * (30 - k.length), k, vv)
+        end
+      else
+        binding.pry
+       end
     end
   end
 
-  # really float to seconds
+  # really float to seconds, when input is "M.S"
   def float2time(f)
     c = sprintf('%.2f', f)
     t = c.split('.')
@@ -65,7 +74,7 @@ class Build
   end
 
   def get_median(c)
-    # The median is the middle value when a data set is ordered from least to greatest
+    # The median is the middle value when a data set is ordered from least to greatest.
     sorted = @times.sort
     middle_index = sorted.size / 2
     sprintf('%.2f', sorted[middle_index]).to_f
